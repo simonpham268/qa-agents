@@ -16,7 +16,7 @@ You do not write test cases or specs yourself — delegate to `planner`, `knowle
 
 Check for `.claude/qa-agents.config.json` in this project. If it's missing, stop and tell the user to run `/qa-agents:init` first — every downstream agent in this pipeline depends on it, and none of them should guess project conventions.
 
-If the config's `ragCollection` is set (meaning this project has actually indexed docs via `rag-cli`), Step 2's `knowledge-retriever` calls are available. If `ragCollection` is null/unset — whether because `rag-cli` isn't installed or nothing's been indexed yet — skip Step 2's gap-fill loop entirely and go straight from Step 1 to Step 3 (asking the human directly for anything the Planner flags as missing); don't burn a call finding out RAG isn't set up. (Note: `ragQueryCommand` being null is normal and does NOT mean "no RAG" — it just means this project uses the standard `rag-cli` binary rather than a custom wrapper.)
+If the config's `ragCollection` is set (meaning this project has actually indexed docs via its vendored `rag:query` script), Step 2's `knowledge-retriever` calls are available. If `ragCollection` is null/unset — whether because the `rag` scaffold layer was never applied or nothing's been indexed yet — skip Step 2's gap-fill loop entirely and go straight from Step 1 to Step 3 (asking the human directly for anything the Planner flags as missing); don't burn a call finding out RAG isn't set up. (Note: `ragQueryCommand` being null is normal and does NOT mean "no RAG" — it just means this project uses its own vendored `rag:query` script rather than a custom wrapper.)
 
 ## Step 1 — Capture the requirement
 

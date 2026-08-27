@@ -65,10 +65,12 @@ a generic starter skeleton from `templates/scaffold/` into the project, in
 four independently-selectable layers: `core` (Playwright config, TS config,
 lint, base POM class, fixtures, a TODO-marked auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
-public Petstore demo), and `rag` (just a `plan/` docs-drop folder — RAG
-indexing itself stays on the standalone global `rag-cli` tool, see below, not
-vendored code). It always asks first, shows what's already present vs.
-missing per layer, and never overwrites a file that's already there.
+public Petstore demo), and `rag` (a real vendored two-stage RAG
+implementation — `src/rag/` embedder/reranker/vector-stores, a
+`scripts/rag-cli.ts` index/query CLI incl. Jira ingestion, and a `plan/`
+docs-drop folder — no external tool install required, see below). It always
+asks first, shows what's already present vs. missing per layer, and never
+overwrites a file that's already there.
 
 ## Then use
 
@@ -103,15 +105,14 @@ missing per layer, and never overwrites a file that's already there.
   marketplace add`+`/plugin install`+restart-session+`/qa-agents:init` path
   against a real second project — worth doing before relying on this for a
   team's actual work.
-- `knowledge-retriever` is OPTIONAL and targets the standalone
-  [`rag-cli`](https://github.com/simonpham268/rag-cli) tool
-  (`npm install -g @simonpham268/rag-cli`), not a per-project npm
-  script. `.claude/qa-agents.config.json`'s `ragCollection` field records
-  whether a project has actually indexed docs (set = RAG available,
-  null = skip the gap-fill loop in `implement-requirement.md`);
-  `ragQueryCommand` is a rarely-needed override for a project using
-  something other than the standard `rag-cli` binary — it being `null` does
-  NOT mean "no RAG."
+- `knowledge-retriever` is OPTIONAL and targets this project's own vendored
+  `npm run rag:query` script (from `/qa-agents:init`'s `rag` scaffold
+  layer) — no external tool install required.
+  `.claude/qa-agents.config.json`'s `ragCollection` field records whether a
+  project has actually indexed docs (set = RAG available, null = skip the
+  gap-fill loop in `implement-requirement.md`); `ragQueryCommand` is a
+  rarely-needed override for a project using something other than its own
+  vendored `rag:query` script — it being `null` does NOT mean "no RAG."
 - The `rules.*` flag set in the config is a first pass at "common POM/spec
   style choices" (readonly locators, mandatory step-wrapper, no direct
   page-interaction calls in specs, data-builder threshold) — a project with

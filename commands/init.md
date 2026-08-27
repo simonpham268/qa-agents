@@ -49,13 +49,15 @@ Playwright/POM/TS project, generalized) under this plugin's own
 | `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.js`, `.gitignore`, `.env.example`, `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
-| `rag` | A thin `plan/` docs-drop folder + `.gitignore` entries — deliberately does **not** vendor a local embedder/vector-store; this plugin standardizes on the global `rag-cli` tool (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
+| `rag` | `src/rag/` (embedder, cross-encoder reranker, SQLite/in-memory/Qdrant vector stores, pipeline, evaluator), `scripts/rag-cli.ts` (index/query CLI, incl. Jira ingestion), `guide/rag-guide.md`, `plan/` docs-drop folder + `.gitignore` entries, `package.json` `rag:build`/`rag:index`/`rag:query` scripts — a real vendored implementation, no external tool install required (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
 
 1. **Detect what's already there** before asking anything: check for
    `playwright.config.ts`, `tsconfig.json`, a POM directory (per Step 1's
    Glob), `allure-playwright` in `package.json`, an `src/api/` or `k6/`
-   directory, and an `.rag/` or `rag-cli` setup. Build a per-layer
-   present/missing picture — don't guess, check the actual filesystem.
+   directory, and `src/rag/` or a `rag:query` script in `package.json`
+   (this layer's own vendored setup — not a global `rag-cli` install). Build
+   a per-layer present/missing picture — don't guess, check the actual
+   filesystem.
 2. **Always surface this to the human**, whether the project is empty or
    already has a framework — via `AskUserQuestion` (multiSelect), showing
    what's already present (so they know it won't be touched) and what's
@@ -104,10 +106,10 @@ Before asking the human anything, look for evidence yourself:
    - What do they import, and from where (a custom fixture, or the test runner directly)?
 4. Look for a test-case source directory (markdown/other format describing scenarios before they become specs) — often near the spec directory or under a `cases`/`test-cases` folder.
 5. Look for a lint command in `package.json` scripts (e.g. `lint`, `lint:file`).
-6. Check RAG setup — the `knowledge-retriever` agent expects the standalone `rag-cli` tool (https://github.com/simonpham268/rag-cli, package `@simonpham268/rag-cli`), installed globally, not a per-project npm script:
-   - Run `rag-cli --version` (or similar) to check whether it's installed on this machine. If not found, RAG is simply unavailable here — that's normal, not an error; don't tell the human to write a wrapper script.
-   - If it IS installed, `Glob` for `.rag/store.sqlite` in the project root to see if anything's been indexed yet, and if so, try to determine which collection name(s) it holds (ask the human if you can't tell from a quick `rag-cli query` test).
-   - Only note a custom `ragQueryCommand` override if the project demonstrably uses something other than the standard `rag-cli` binary (rare) — don't invent one.
+6. Check RAG setup — the `knowledge-retriever` agent expects a per-project `npm run rag:query` script backed by this plugin's own vendored `src/rag/` implementation (see Step 0's `rag` layer), not a global tool install:
+   - `Glob`/`Grep` for `src/rag/index.ts` and a `rag:query` script in `package.json`. If neither is there, RAG is simply unavailable here — that's normal, not an error; offer the `rag` scaffold layer (Step 0) rather than telling the human to install anything externally.
+   - If it IS present, `Glob` for `.rag/store.sqlite` in the project root to see if anything's been indexed yet, and if so, try to determine which collection name(s) it holds (ask the human if you can't tell from a quick `npm run rag:query --` test).
+   - Only note a custom `ragQueryCommand` override if the project demonstrably uses something other than its own `npm run rag:query` script (rare) — don't invent one.
 7. Check for a project instructions file (`CLAUDE.md` or similar) that already documents test-case format rules — if found, don't duplicate its content into the config; just note its path so `test-case-writer` reads it directly.
 
 ## Step 2 — Confirm with the human
@@ -124,7 +126,7 @@ Show what you found (or didn't) and ask, in one pass — don't interrogate field
   - Specs must call only POM methods, never low-level page-interaction calls directly
   - A field-count threshold above which a Data Builder pattern should be used (or "not used in this project")
 - Lint command (or "none")
-- RAG: whether `rag-cli` was found installed, and if so which collection this project's docs live in (or "not indexed yet" / "rag-cli not installed — skip knowledge-retriever for now")
+- RAG: whether the vendored `src/rag/` + `rag:query` script was found, and if so which collection this project's docs live in (or "not indexed yet" / "rag layer not scaffolded — offer it, or skip knowledge-retriever for now")
 - Test header/name format, if the project has a fixed convention (e.g. a doc comment ID + tags above each test)
 
 Use `AskUserQuestion` for anything genuinely ambiguous after Step 1; don't ask about things Step 1 already confirmed with high confidence — just state them and let the human correct if wrong.
@@ -141,8 +143,8 @@ Write `.claude/qa-agents.config.json` in the target project:
   "casesDir": "<path, or null if TCs aren't tracked as files>",
   "fixtureImport": "<import path, or null>",
   "lintCommand": "<command, or null>",
-  "ragCollection": "<collection name rag-cli holds this project's docs under, or null if not indexed yet>",
-  "ragQueryCommand": "<ONLY set if this project uses something other than the standard global `rag-cli` binary — an override command, else null (null does NOT mean 'no RAG'; it means 'use the standard rag-cli binary')>",
+  "ragCollection": "<collection name this project's vendored rag-cli holds its docs under, or null if not indexed yet>",
+  "ragQueryCommand": "<ONLY set if this project uses something other than its own vendored `npm run rag:query --` script — an override command, else null (null does NOT mean 'no RAG'; it means 'use this project's own npm run rag:query -- script')>",
   "testHeaderFormat": "<short description or example, or null>",
   "caseFormatDoc": "<path to the project's own TC-format rules doc, if one exists, else null>",
   "rules": {

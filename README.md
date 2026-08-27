@@ -25,6 +25,9 @@ docs/
   framework-rules.template.md   filled in per-project by /qa-agents:init
   intent-mapping.template.md    filled in per-project by /qa-agents:init
   healing-rules.md              app-agnostic P1/P2 playbook, copied as-is
+templates/scaffold/             starter framework skeleton /qa-agents:init can
+                                 copy into a project that has none yet — see
+                                 "Scaffolding a starter framework" below
 ```
 
 ## Install into a project
@@ -53,6 +56,19 @@ layout.
 
 Re-run `/qa-agents:init` whenever the target project's conventions change
 materially.
+
+## Scaffolding a starter framework
+
+If the target project has no Playwright/POM framework yet (or is missing
+pieces of one), `/qa-agents:init` offers — before it scans anything — to copy
+a generic starter skeleton from `templates/scaffold/` into the project, in
+four independently-selectable layers: `core` (Playwright config, TS config,
+lint, base POM class, fixtures, a TODO-marked auth starter), `allure`
+(reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
+public Petstore demo), and `rag` (just a `plan/` docs-drop folder — RAG
+indexing itself stays on the standalone global `rag-cli` tool, see below, not
+vendored code). It always asks first, shows what's already present vs.
+missing per layer, and never overwrites a file that's already there.
 
 ## Then use
 

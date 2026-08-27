@@ -1,5 +1,5 @@
 ---
-description: Scan this project and write .claude/qa-agents.config.json so the other qa-agents commands/agents stop guessing paths and conventions. Run once per project before anything else in this plugin.
+description: Scan this project (offering to scaffold a starter Playwright/POM/TS framework structure first if one isn't there yet) and write .claude/qa-agents.config.json so the other qa-agents commands/agents stop guessing paths and conventions. Run once per project before anything else in this plugin.
 ---
 
 # Initialize qa-agents for this project
@@ -11,6 +11,57 @@ description: Scan this project and write .claude/qa-agents.config.json so the ot
 Run this once per target project, before using `/qa-agents:implement-requirement`, `/qa-agents:implement-script`, or `/qa-agents:implement-fix-script` for the first time — and again any time the project's test-automation conventions change materially (new POM location, new spec style rule, etc.).
 
 You are gathering just enough project-specific fact to make the other agents config-driven instead of guessing. Do not invent an answer to any of these — if you can't find or confirm something, leave it unset in the config and note it as a follow-up for the human, rather than defaulting to this plugin's own examples (e.g. don't default `pomDir` to `src/pages/LDM` — that's this plugin's dogfood project, not the target project).
+
+## Step 0 — Offer to scaffold the framework structure
+
+This plugin ships a generic starter framework skeleton (modeled on a real
+Playwright/POM/TS project, generalized) under this plugin's own
+`templates/scaffold/` directory, in four independently-selectable layers:
+
+| Layer | Adds |
+|---|---|
+| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.js`, `.gitignore`, `.env.example`, `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
+| `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
+| `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
+| `rag` | A thin `plan/` docs-drop folder + `.gitignore` entries — deliberately does **not** vendor a local embedder/vector-store; this plugin standardizes on the global `rag-cli` tool (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
+
+1. **Detect what's already there** before asking anything: check for
+   `playwright.config.ts`, `tsconfig.json`, a POM directory (per Step 1's
+   Glob), `allure-playwright` in `package.json`, an `src/api/` or `k6/`
+   directory, and an `.rag/` or `rag-cli` setup. Build a per-layer
+   present/missing picture — don't guess, check the actual filesystem.
+2. **Always surface this to the human**, whether the project is empty or
+   already has a framework — via `AskUserQuestion` (multiSelect), showing
+   what's already present (so they know it won't be touched) and what's
+   missing per layer. If literally everything in all four layers is already
+   present, skip the question and just state that instead of asking a vacuous
+   one. Let them pick zero or more layers to scaffold now.
+3. **For each selected layer**, copy every file from this plugin's
+   `templates/scaffold/<layer>/` into the equivalent path in the target
+   project, then apply that layer's `ADDITIONS.md` (playwright.config.ts /
+   package.json / `.gitignore` merges — these are instructions for you to
+   apply with `Edit`, not files to copy verbatim).
+   - Replace `{{APP_SLUG}}` with a short kebab-case slug derived from the
+     target project's name (package.json `name`, or the directory name) —
+     used for the storageState auth filename.
+   - **Never overwrite a file that already exists at the target path.** If a
+     template file would collide with something already there, skip writing
+     it and note the skip in the Step 5 report instead — this is existing
+     work, not yours to clobber.
+   - When merging into an existing `package.json` / `.gitignore` /
+     `playwright.config.ts` / `eslint.config.js`, merge additively (`Edit`),
+     and if a script/dep/section already exists with a *different* value
+     than the template expects, keep the project's existing value and flag
+     the conflict in Step 5 rather than overwriting it.
+4. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
+   starters, not real POMs** — they're deliberately full of `TODO` /
+   placeholder locators (never invented real ones — same discipline as
+   everywhere else in this plugin). Tell the human explicitly that these need
+   a real `dom-inspector` + `pom-author` pass against the app's actual login
+   page before they're usable, or should be deleted if the app needs no auth.
+5. Whatever layers were scaffolded (or none, if skipped), continue into
+   Step 1 below — the scan there will now pick up whatever structure just got
+   written (or the project's pre-existing one) as "existing conventions."
 
 ## Step 1 — Scan for existing conventions
 
@@ -89,6 +140,9 @@ Copy `docs/healing-rules.md` as-is (it's app-agnostic P1/P2 troubleshooting) unl
 ## Step 5 — Report
 
 Tell the human:
+- Which scaffold layers (if any) were applied in Step 0, which files were written, and which were skipped because something already existed at that path (list them — don't silently drop this).
+- Any merge conflicts flagged in Step 0 (existing script/dep/config value that differed from the template's).
+- That `src/pages/example/login.page.ts` / `src/global.setup.ts` (if scaffolded) are TODO-marked starters needing a real `dom-inspector` + `pom-author` pass, or deletion if the app needs no auth.
 - The config file path written.
 - Any field left unset/null and why (so they know what's not yet configured, not silently assumed).
 - Whether framework-rules.md / intent-mapping.md were written or skipped, and why.

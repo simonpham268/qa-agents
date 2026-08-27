@@ -12,6 +12,32 @@ Run this once per target project, before using `/qa-agents:implement-requirement
 
 You are gathering just enough project-specific fact to make the other agents config-driven instead of guessing. Do not invent an answer to any of these — if you can't find or confirm something, leave it unset in the config and note it as a follow-up for the human, rather than defaulting to this plugin's own examples (e.g. don't default `pomDir` to `src/pages/LDM` — that's this plugin's dogfood project, not the target project).
 
+## Progress reporting
+
+This flow runs many `Glob`/`Read`/`Grep`/`Bash` calls and, when scaffolding,
+copies/edits several files. Keep the terminal output clean instead of noisy:
+
+- Right before starting each of the 6 steps below (Step 0 through Step 5),
+  print exactly one short progress line and nothing else at that point —
+  no file contents, no code snippets, no raw command output:
+
+  ```
+  [■■□□□□] Step 2/6 — Confirming conventions with you
+  ```
+
+  Fill in the bar (`■`/`□`, one block per step) and the step number/label
+  for that step. Use these six labels in order: `Scaffold check`, `Scanning
+  conventions`, `Confirming conventions with you`, `Writing config`,
+  `Writing framework-rules doc`, `Final report`.
+- While scanning (Step 0's detection pass and Step 1), do the Glob/Read/Grep
+  work silently — do not paste the file contents, matched snippets, or
+  command output you read into the chat. Only turn what you found into a
+  short natural-language summary, saved for Step 2/Step 5.
+- Full detail (concrete paths, code snippets, the config JSON) still belongs
+  in the Step 2 confirmation question and the Step 5 report — this rule only
+  suppresses the intermediate scanning noise, not the final content the
+  human needs to review.
+
 ## Step 0 — Offer to scaffold the framework structure
 
 This plugin ships a generic starter framework skeleton (modeled on a real

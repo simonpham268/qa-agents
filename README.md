@@ -30,12 +30,12 @@ docs/
 ## Install into a project
 
 ```
-/plugin marketplace add <owner>/qa-agents
+/plugin marketplace add simonpham268/qa-agents
 /plugin install qa-agents
 ```
 
-(Or, while developing locally before this is pushed anywhere: point
-`/plugin marketplace add` at a local path.)
+(Or, while developing locally: point `/plugin marketplace add` at a local
+path instead of the GitHub shorthand.)
 
 Then, inside the target project:
 
@@ -80,9 +80,13 @@ materially.
 
 ## Status / known gaps (as of first draft)
 
-- Not yet test-installed into a real second project — `/plugin marketplace
-  add`+`/plugin install` flow against this local repo, then `/qa-agents:init`
-  against an unrelated Playwright project, is the next validation step.
+- Validated once: `claude plugin validate --strict` passes clean, and a fresh
+  subagent executing `commands/init.md`'s instructions verbatim against a
+  deliberately different fake Playwright project produced a correct,
+  non-LDM-biased config. Not yet validated via the live `/plugin
+  marketplace add`+`/plugin install`+restart-session+`/qa-agents:init` path
+  against a real second project — worth doing before relying on this for a
+  team's actual work.
 - `knowledge-retriever` is OPTIONAL and targets the standalone
   [`rag-cli`](https://github.com/simonpham268/rag-cli) tool
   (`npm install -g @simonpham268/rag-cli`), not a per-project npm

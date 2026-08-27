@@ -1,0 +1,14 @@
+{
+  "name": "qa-agents-marketplace",
+  "description": "Marketplace hosting the qa-agents plugin — a Playwright/POM UI test-automation agent pipeline.",
+  "owner": {
+    "name": "SIMON"
+  },
+  "plugins": [
+    {
+      "name": "qa-agents",
+      "source": "./",
+      "description": "Multi-agent pipeline for Playwright/POM UI test automation: requirement -> test case -> spec, plus heal/compliance/quality loops."
+    }
+  ]
+}

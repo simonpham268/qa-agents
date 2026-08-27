@@ -1,0 +1,99 @@
+# qa-agents
+
+A Claude Code plugin: a multi-agent pipeline for Playwright/POM-based UI test
+automation — raw requirement → test case → spec, plus heal / compliance /
+quality-scorecard loops. Originally extracted from an LDM Back Office test
+automation project and generalized to be config-driven instead of hard-coded
+to that project's paths and conventions.
+
+## What's in here
+
+```
+.claude-plugin/
+  plugin.json          plugin manifest
+  marketplace.json      self-listing marketplace (this repo IS the marketplace)
+agents/                 12 subagents (planner, knowledge-retriever, test-designer,
+                         reviewer, test-case-writer, dom-inspector, pom-discoverer,
+                         pom-author, spec-runner, code-fixer, compliance-checker,
+                         spec-evaluator)
+commands/
+  init.md               /qa-agents:init — run once per target project first
+  implement-requirement.md
+  implement-script.md
+  implement-fix-script.md
+docs/
+  framework-rules.template.md   filled in per-project by /qa-agents:init
+  intent-mapping.template.md    filled in per-project by /qa-agents:init
+  healing-rules.md              app-agnostic P1/P2 playbook, copied as-is
+```
+
+## Install into a project
+
+```
+/plugin marketplace add <owner>/qa-agents
+/plugin install qa-agents
+```
+
+(Or, while developing locally before this is pushed anywhere: point
+`/plugin marketplace add` at a local path.)
+
+Then, inside the target project:
+
+```
+/qa-agents:init
+```
+
+This scans the target project for its actual POM directory, spec directory,
+test-case directory, spec/POM style conventions, and lint/RAG commands, then
+writes `.claude/qa-agents.config.json` (and optionally
+`.claude/docs/framework-rules.md` / `intent-mapping.md`, adapted from the
+`docs/*.template.md` files in this plugin). Every other command and agent in
+this plugin reads that config instead of assuming any particular project's
+layout.
+
+Re-run `/qa-agents:init` whenever the target project's conventions change
+materially.
+
+## Then use
+
+```
+/qa-agents:implement-requirement    raw requirement -> approved TC -> spec
+/qa-agents:implement-script         existing TC markdown -> spec
+/qa-agents:implement-fix-script     heal a failing spec
+```
+
+## Design notes
+
+- **No plugin-install-time scripting.** Claude Code plugins have no
+  postinstall hook — `/qa-agents:init` is a slash command the agent runs
+  *inside* the target project, not a shell script that runs automatically on
+  install.
+- **Config over hard-coding.** `pom-discoverer`, `pom-author`,
+  `compliance-checker`, `spec-evaluator`, and `test-case-writer` all read
+  `.claude/qa-agents.config.json` at runtime via the normal `Read` tool —
+  no special mechanism needed. If the config is missing, they refuse and
+  point the caller at `/qa-agents:init` rather than guessing a path.
+- **Never invent project-specific facts.** The templates in `docs/` start
+  with explicit `{{TODO}}` placeholders and empty "none recorded yet" tables
+  rather than plausible-sounding but fabricated examples — same discipline
+  the agents themselves follow (`<TODO: confirm ...>` in TCs/specs).
+
+## Status / known gaps (as of first draft)
+
+- Not yet test-installed into a real second project — `/plugin marketplace
+  add`+`/plugin install` flow against this local repo, then `/qa-agents:init`
+  against an unrelated Playwright project, is the next validation step.
+- `knowledge-retriever` is OPTIONAL and targets the standalone
+  [`rag-cli`](https://github.com/simonpham268/rag-cli) tool
+  (`npm install -g @simonpham268/rag-cli`), not a per-project npm
+  script. `.claude/qa-agents.config.json`'s `ragCollection` field records
+  whether a project has actually indexed docs (set = RAG available,
+  null = skip the gap-fill loop in `implement-requirement.md`);
+  `ragQueryCommand` is a rarely-needed override for a project using
+  something other than the standard `rag-cli` binary — it being `null` does
+  NOT mean "no RAG."
+- The `rules.*` flag set in the config is a first pass at "common POM/spec
+  style choices" (readonly locators, mandatory step-wrapper, no direct
+  page-interaction calls in specs, data-builder threshold) — a project with
+  a meaningfully different spec architecture (e.g. Screenplay pattern) may
+  need additional flags this version doesn't have yet.

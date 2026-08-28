@@ -46,48 +46,62 @@ Playwright/POM/TS project, generalized) under this plugin's own
 
 | Layer | Adds |
 |---|---|
-| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.js`, `.gitignore`, `.env.example`, `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
+| `core` | `playwright.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `.mcp.json` (the `playwright-test` MCP server `dom-inspector` needs), `.gitignore`, `.env.example`, `src/utils/env.ts`, `src/pages/base.page.ts` (shared POM base class), `src/global.setup.ts` + `src/pages/example/login.page.ts` (TODO-marked auth starter), `src/tests/seed.spec.ts` |
 | `allure` | Allure reporter wiring in `playwright.config.ts` + `package.json` scripts/deps (config-only, no new source files) |
 | `api-k6` | `src/api/{base,config,endpoints,models,services}` (generic sample REST layer) + `k6/` perf-test scaffold (esbuild build, smoke/load/stress against the public Swagger Petstore demo as a runnable placeholder) |
 | `rag` | `src/rag/` (embedder, cross-encoder reranker, SQLite/in-memory/Qdrant vector stores, pipeline, evaluator), `scripts/rag-cli.ts` (index/query CLI, incl. Jira ingestion), `guide/rag-guide.md`, `plan/` docs-drop folder + `.gitignore` entries, `package.json` `rag:build`/`rag:index`/`rag:query` scripts — a real vendored implementation, no external tool install required (see Step 1.6 below and each layer's own `ADDITIONS.md`) |
 
 1. **Detect what's already there** before asking anything: check for
-   `playwright.config.ts`, `tsconfig.json`, a POM directory (per Step 1's
-   Glob), `allure-playwright` in `package.json`, an `src/api/` or `k6/`
-   directory, and `src/rag/` or a `rag:query` script in `package.json`
+   `playwright.config.ts`, `tsconfig.json`, `.mcp.json`, a POM directory (per
+   Step 1's Glob), `allure-playwright` in `package.json`, an `src/api/` or
+   `k6/` directory, and `src/rag/` or a `rag:query` script in `package.json`
    (this layer's own vendored setup — not a global `rag-cli` install). Build
    a per-layer present/missing picture — don't guess, check the actual
    filesystem.
 2. **Always surface this to the human**, whether the project is empty or
-   already has a framework — via `AskUserQuestion` (multiSelect), showing
-   what's already present (so they know it won't be touched) and what's
-   missing per layer. If literally everything in all four layers is already
-   present, skip the question and just state that instead of asking a vacuous
-   one. Let them pick zero or more layers to scaffold now.
-3. **For each selected layer**, copy every file from this plugin's
+   already has a framework — unless literally everything in all four layers
+   is already present, in which case skip straight to step 3b and just state
+   that instead of asking a vacuous question. Otherwise ask, via
+   `AskUserQuestion` (single-select), how they want to proceed:
+   - **Default** — scaffold every layer that has anything missing, using
+     this plugin's generic templates as-is (no per-layer picking). Best for
+     an empty or near-empty project that just wants the whole starter
+     framework.
+   - **Custom** — pick exactly which layer(s) to scaffold now.
+3. **Resolve which layers to scaffold**, based on the answer to step 2:
+   - **3a. If Default** — treat every layer step 1 found not-fully-present
+     as selected. Still show what's already present per layer (so the human
+     knows it won't be touched) before proceeding — this is a statement, not
+     a second question.
+   - **3b. If Custom** — ask a second `AskUserQuestion` (multiSelect),
+     showing what's already present vs. missing per layer, and let them pick
+     zero or more layers to scaffold now.
+4. **For each selected layer**, copy every file from this plugin's
    `templates/scaffold/<layer>/` into the equivalent path in the target
-   project, then apply that layer's `ADDITIONS.md` (playwright.config.ts /
-   package.json / `.gitignore` merges — these are instructions for you to
-   apply with `Edit`, not files to copy verbatim).
+   project — including dotfiles like `.mcp.json` (don't let a hidden-file
+   listing skip them) — then apply that layer's `ADDITIONS.md`
+   (playwright.config.ts / package.json / `.gitignore` merges — these are
+   instructions for you to apply with `Edit`, not files to copy verbatim).
    - Replace `{{APP_SLUG}}` with a short kebab-case slug derived from the
      target project's name (package.json `name`, or the directory name) —
      used for the storageState auth filename.
    - **Never overwrite a file that already exists at the target path.** If a
      template file would collide with something already there, skip writing
      it and note the skip in the Step 5 report instead — this is existing
-     work, not yours to clobber.
+     work, not yours to clobber. This applies identically in Default mode —
+     "default" means "fill in what's missing," never "clobber what's there."
    - When merging into an existing `package.json` / `.gitignore` /
-     `playwright.config.ts` / `eslint.config.js`, merge additively (`Edit`),
+     `playwright.config.ts` / `eslint.config.mjs`, merge additively (`Edit`),
      and if a script/dep/section already exists with a *different* value
      than the template expects, keep the project's existing value and flag
      the conflict in Step 5 rather than overwriting it.
-4. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
+5. **`core/src/pages/example/login.page.ts` and `src/global.setup.ts` are
    starters, not real POMs** — they're deliberately full of `TODO` /
    placeholder locators (never invented real ones — same discipline as
    everywhere else in this plugin). Tell the human explicitly that these need
    a real `dom-inspector` + `pom-author` pass against the app's actual login
    page before they're usable, or should be deleted if the app needs no auth.
-5. Whatever layers were scaffolded (or none, if skipped), continue into
+6. Whatever layers were scaffolded (or none, if skipped), continue into
    Step 1 below — the scan there will now pick up whatever structure just got
    written (or the project's pre-existing one) as "existing conventions."
 

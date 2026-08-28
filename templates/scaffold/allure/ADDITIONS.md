@@ -49,6 +49,6 @@ reporter: [
 /allure-report/
 ```
 
-## 5. eslint.config.js — ignores
+## 5. eslint.config.mjs — ignores
 
 Add `'allure-*/'` to the `ignores` array (already present in the core template — no change needed if scaffolding both layers together).

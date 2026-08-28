@@ -63,14 +63,17 @@ If the target project has no Playwright/POM framework yet (or is missing
 pieces of one), `/qa-agents:init` offers — before it scans anything — to copy
 a generic starter skeleton from `templates/scaffold/` into the project, in
 four independently-selectable layers: `core` (Playwright config, TS config,
-lint, base POM class, fixtures, a TODO-marked auth starter), `allure`
+lint, a `.mcp.json` wiring up the `playwright-test` MCP server `dom-inspector`
+needs, base POM class, fixtures, a TODO-marked auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
 public Petstore demo), and `rag` (a real vendored two-stage RAG
 implementation — `src/rag/` embedder/reranker/vector-stores, a
 `scripts/rag-cli.ts` index/query CLI incl. Jira ingestion, and a `plan/`
 docs-drop folder — no external tool install required, see below). It always
-asks first, shows what's already present vs. missing per layer, and never
-overwrites a file that's already there.
+asks first — **Default** (scaffold every layer with anything missing) or
+**Custom** (pick specific layers) — shows what's already present vs.
+missing per layer either way, and never overwrites a file that's already
+there.
 
 ## Then use
 

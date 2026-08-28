@@ -79,6 +79,10 @@ JIRA_EMAIL=
 JIRA_API_TOKEN=
 ```
 
+Skip if the `core` layer was already applied — its `.env.example` template
+includes this block by default. Only add it here if `rag` is being
+scaffolded without `core`.
+
 ## 7. Node version note — tell the human explicitly
 
 The default `SqliteStore` backend uses Node's built-in `node:sqlite`

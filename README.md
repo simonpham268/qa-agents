@@ -64,7 +64,8 @@ pieces of one), `/qa-agents:init` offers — before it scans anything — to cop
 a generic starter skeleton from `templates/scaffold/` into the project, in
 four independently-selectable layers: `core` (Playwright config, TS config,
 lint, a `.mcp.json` wiring up the `playwright-test` MCP server `dom-inspector`
-needs, base POM class, fixtures, a TODO-marked auth starter), `allure`
+needs, a generic `CLAUDE.md` starter, base POM class, fixtures, a TODO-marked
+auth starter), `allure`
 (reporting), `api-k6` (a generic REST API layer + k6 perf tests against the
 public Petstore demo), and `rag` (a real vendored two-stage RAG
 implementation — `src/rag/` embedder/reranker/vector-stores, a
